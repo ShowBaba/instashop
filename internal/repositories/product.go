@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+
 	"gorm.io/gorm"
 	"instashop/models"
 )
@@ -18,6 +19,9 @@ func (p *ProductRepository) Create(product *models.Product) error {
 	return p.db.Create(product).Error
 }
 
+func (p *ProductRepository) CreateMany(products []models.Product) error {
+	return p.db.Create(&products).Error
+}
 func (p *ProductRepository) FindByID(productID uint) (*models.Product, error) {
 	var product models.Product
 	if err := p.db.First(&product, productID).Error; err != nil {
@@ -27,6 +31,14 @@ func (p *ProductRepository) FindByID(productID uint) (*models.Product, error) {
 		return nil, err
 	}
 	return &product, nil
+}
+
+func (p *ProductRepository) FetchByNames(names []string) ([]models.Product, error) {
+	var products []models.Product
+	if err := p.db.Where("name IN ?", names).Find(&products).Error; err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
 func (p *ProductRepository) Update(product *models.Product) error {

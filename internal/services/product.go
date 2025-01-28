@@ -8,7 +8,7 @@ import (
 )
 
 type ProductClient interface {
-	CreateProduct(input dtos.CreateProductRequest) (*models.Product, *common.RestErr)
+	CreateProducts(inputs []dtos.CreateProductRequest) ([]models.Product, *common.RestErr)
 	GetProduct(productID uint) (*models.Product, *common.RestErr)
 	DeleteProduct(productID uint) *common.RestErr
 	ListProducts() ([]models.Product, *common.RestErr)
@@ -27,19 +27,46 @@ func NewProductService(productRepo *repositories.ProductRepository,
 		restErr}
 }
 
-func (p *ProductService) CreateProduct(input dtos.CreateProductRequest) (*models.Product, *common.RestErr) {
-	product := models.Product{
-		Name:        input.Name,
-		Description: input.Description,
-		Price:       input.Price,
-		Stock:       input.Stock,
+func (p *ProductService) CreateProducts(inputs []dtos.CreateProductRequest) ([]models.Product, *common.RestErr) {
+	var products []models.Product
+	var productNames []string
+
+	for _, input := range inputs {
+		productNames = append(productNames, input.Name)
 	}
 
-	if err := p.productRepo.Create(&product); err != nil {
+	existingProducts, err := p.productRepo.FetchByNames(productNames)
+	if err != nil {
 		return nil, p.restErr.ServerError(common.ErrSomethingWentWrong)
 	}
 
-	return &product, nil
+	existingProductMap := make(map[string]bool)
+	for _, product := range existingProducts {
+		existingProductMap[product.Name] = true
+	}
+
+	for _, input := range inputs {
+		if _, exists := existingProductMap[input.Name]; exists {
+			continue
+		}
+		product := models.Product{
+			Name:        input.Name,
+			Description: input.Description,
+			Price:       input.Price,
+			Stock:       input.Stock,
+		}
+		products = append(products, product)
+	}
+
+	if len(products) == 0 {
+		return nil, p.restErr.BadRequest("No new products to add")
+	}
+
+	if err := p.productRepo.CreateMany(products); err != nil {
+		return nil, p.restErr.ServerError(common.ErrSomethingWentWrong)
+	}
+
+	return products, nil
 }
 
 func (p *ProductService) GetProduct(productID uint) (*models.Product, *common.RestErr) {

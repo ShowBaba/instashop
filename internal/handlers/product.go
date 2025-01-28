@@ -20,14 +20,14 @@ func NewProductHandler(productSvc services.ProductClient,
 }
 
 func (p *ProductHandler) CreateProduct(c *fiber.Ctx) error {
-	var input dtos.CreateProductRequest
+	var input []dtos.CreateProductRequest
 	if err := c.BodyParser(&input); err != nil {
 		log.Error(zap.Error(err))
 		err := p.restErr.ServerError(common.ErrSomethingWentWrong)
 		return c.Status(err.StatusCode).JSON(err)
 	}
 
-	product, srvErr := p.productSvc.CreateProduct(input)
+	product, srvErr := p.productSvc.CreateProducts(input)
 	if srvErr != nil {
 		return c.Status(srvErr.StatusCode).JSON(srvErr)
 	}

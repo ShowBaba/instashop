@@ -1,14 +1,11 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
-	"go.uber.org/zap"
 	"instashop/internal/common"
 	"instashop/internal/utils"
 )
@@ -46,11 +43,6 @@ func (a *AuthMiddleware) ValidateAuthHeaderToken(c *fiber.Ctx) error {
 }
 
 func AdminOnly(c *fiber.Ctx) error {
-	userID, err := utils.GetAuthUserIdFromContext(c)
-	if err != nil {
-		log.Error(zap.Error(err))
-		return c.Status(http.StatusInternalServerError).JSON(common.ErrSomethingWentWrong)
-	}
 	userRole := c.GetRespHeader("role")
 	if userRole != "admin" {
 		c.Status(200)
@@ -59,8 +51,6 @@ func AdminOnly(c *fiber.Ctx) error {
 			"message": common.ErrUnauthorized,
 		})
 	}
-
-	fmt.Println("userID:", userID)
 
 	return c.Next()
 }

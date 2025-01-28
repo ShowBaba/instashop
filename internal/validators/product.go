@@ -15,23 +15,25 @@ func NewProductValidator() *ProductValidator {
 }
 
 func (v *ProductValidator) ValidateCreateProduct(c *fiber.Ctx) error {
-	var input dtos.CreateProductRequest
-	if err := c.BodyParser(&input); err != nil {
+	var inputs []dtos.CreateProductRequest
+	if err := c.BodyParser(&inputs); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid request body",
 		})
 	}
 
-	if err := v.validate.Struct(input); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"success": false,
-			"message": "Validation failed",
-			"errors":  err.(validator.ValidationErrors),
-		})
+	for _, input := range inputs {
+		if err := v.validate.Struct(input); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"success": false,
+				"message": "Validation failed",
+				"errors":  err.(validator.ValidationErrors),
+			})
+		}
 	}
 
-	c.Locals("input", input)
+	c.Locals("input", inputs)
 	return c.Next()
 }
 
