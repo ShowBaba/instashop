@@ -11,7 +11,7 @@ type ProductClient interface {
 	CreateProducts(inputs []dtos.CreateProductRequest) ([]models.Product, *common.RestErr)
 	GetProduct(productID uint) (*models.Product, *common.RestErr)
 	DeleteProduct(productID uint) *common.RestErr
-	ListProducts() ([]models.Product, *common.RestErr)
+	ListProducts(page, pageSize int) ([]models.Product, int64, *common.RestErr)
 	UpdateProduct(productID uint, input dtos.UpdateProductRequest) (*models.Product, *common.RestErr)
 }
 
@@ -118,11 +118,11 @@ func (p *ProductService) DeleteProduct(productID uint) *common.RestErr {
 	return nil
 }
 
-func (p *ProductService) ListProducts() ([]models.Product, *common.RestErr) {
-	products, err := p.productRepo.ListAll()
+func (p *ProductService) ListProducts(page, pageSize int) ([]models.Product, int64, *common.RestErr) {
+	products, totalCount, err := p.productRepo.ListPaginated(page, pageSize)
 	if err != nil {
-		return nil, p.restErr.ServerError(common.ErrSomethingWentWrong)
+		return nil, 0, p.restErr.ServerError(common.ErrSomethingWentWrong)
 	}
 
-	return products, nil
+	return products, totalCount, nil
 }

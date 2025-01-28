@@ -49,6 +49,22 @@ func (p *ProductRepository) Delete(productID uint) error {
 	return p.db.Delete(&models.Product{}, productID).Error
 }
 
+func (p *ProductRepository) ListPaginated(page, pageSize int) ([]models.Product, int64, error) {
+	var products []models.Product
+	var totalCount int64
+
+	if err := p.db.Model(&models.Product{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * pageSize
+	if err := p.db.Limit(pageSize).Offset(offset).Find(&products).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return products, totalCount, nil
+}
+
 func (p *ProductRepository) ListAll() ([]models.Product, error) {
 	var products []models.Product
 	if err := p.db.Find(&products).Error; err != nil {

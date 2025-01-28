@@ -51,6 +51,5 @@ func AdminOnly(c *fiber.Ctx) error {
 			"message": common.ErrUnauthorized,
 		})
 	}
-
 	return c.Next()
 }

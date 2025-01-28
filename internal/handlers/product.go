@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"go.uber.org/zap"
@@ -106,14 +108,43 @@ func (p *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 }
 
 func (p *ProductHandler) ListProducts(c *fiber.Ctx) error {
-	products, srvErr := p.productSvc.ListProducts()
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		return c.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid page parameter",
+		})
+	}
+
+	pageSize, err := strconv.Atoi(c.Query("pageSize", "10"))
+	if err != nil || pageSize < 1 {
+		return c.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid pageSize parameter",
+		})
+	}
+
+	products, totalCount, srvErr := p.productSvc.ListProducts(page, pageSize)
 	if srvErr != nil {
 		return c.Status(srvErr.StatusCode).JSON(srvErr)
+	}
+
+	totalPages := (int(totalCount) + pageSize - 1) / pageSize
+	nextPage := page + 1
+	if page >= totalPages {
+		nextPage = 0
 	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
 		"message": "Products retrieved successfully",
 		"data":    products,
+		"pagination": fiber.Map{
+			"currentPage": page,
+			"pageSize":    pageSize,
+			"totalPages":  totalPages,
+			"totalCount":  totalCount,
+			"nextPage":    nextPage,
+		},
 	})
 }
